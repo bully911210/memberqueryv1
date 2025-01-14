@@ -1,53 +1,170 @@
-function doGet(e) {
-  // Create response object and set content type to JSON
-  var response = ContentService.createTextOutput();
-  response.setMimeType(ContentService.MimeType.JSON);
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Data Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f8ff;
+            color: navy;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        input[type="text"] {
+            margin-right: 20px;
+            padding: 5px;
+        }
+        button {
+            background-color: navy;
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: darkblue;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        #error-message {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SIG Solutions' Membership Query Tool</h1>
+    <div class="search-container">
+        <label for="search-query">Search:</label>
+        <input type="text" id="search-query" placeholder="Enter email, ID number, or phone number">
+        <button id="search-button">Search</button>
+    </div>
+    <div id="error-message"></div>
+    <table id="results-table" style="display: none;">
+        <thead>
+            <tr>
+                <th>Agent Name</th>
+                <th>Client Name</th>
+                <th>Client Email</th>
+                <th>Client Phone Number</th>
+                <th>Monthly Premium</th>
+                <th>Annual Premium</th>
+                <th>Client ID Number</th>
+                <th>Street Address</th>
+                <th>Suburb</th>
+                <th>City/Town</th>
+                <th>Province</th>
+                <th>Postal Code</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
 
-  // Enable CORS - Allow any origin (you can specify your domain for more security)
-  response.addHeader("Access-Control-Allow-Origin", "*"); // You can replace '*' with your domain like 'https://member-checker.onrender.com'
-  response.addHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  response.addHeader("Access-Control-Allow-Headers", "Content-Type");
+    <script>
+        const scriptUrl = "https://script.google.com/macros/s/AKfycbw_JE_tH7JHab0EnEmerLkhDZoxfwPsskA3wckJp8dULrv3KpciN3XNeUolBCZ2pvjPzA/exec"; // Replace with your Web App URL
 
-  // Allow OPTIONS preflight request
-  if (e && e.parameter && e.parameter.query === undefined) {
-    return response;
-  }
+        // Fetch and display results based on the query parameter
+        function handleSearch(queryParam) {
+            const errorMessage = document.getElementById("error-message");
+            const resultsTable = document.getElementById("results-table");
+            const resultsBody = resultsTable.querySelector("tbody");
 
-  // Get the query parameter (the value entered in the search input)
-  var query = e.parameter.query;
+            errorMessage.textContent = "";
+            resultsTable.style.display = "none";
+            resultsBody.innerHTML = "";
 
-  // Replace with your actual Google Sheet ID and sheet name
-  var sheet = SpreadsheetApp.openById('1G-_SbkSc7YYkBy7dFkGlFERkK6IJNt78hVGCIrsYeW4/').getSheetByName('SIGS Sales Data - 2024 - 2025'); // Replace 'YOUR_SHEET_ID' and 'Sheet1' with your actual Sheet ID and name
-  var data = sheet.getDataRange().getValues();  // Fetch all the data from the sheet
+            console.log("Starting fetch with query: ", queryParam);  // Debugging: Log the query
 
-  var filteredData = [];
-  
-  // Filter data based on the query (assuming the query matches the first column)
-  // Modify the filter logic based on your actual sheet's structure
-  data.forEach(function(row) {
-    if (row[0].toString() === query) {  // Modify the condition based on your column structure
-      filteredData.push({
-        "Agent Name": row[1],  // Assuming column 1 contains the agent name
-        "Client Name": row[2],  // Assuming column 2 contains the client name
-        "Client Email": row[3], // Assuming column 3 contains the client email
-        "Client Phone Number": row[4], // Assuming column 4 contains the client phone number
-        "Monthly Premium": row[5], // Assuming column 5 contains the monthly premium
-        "Annual Premium": row[6], // Assuming column 6 contains the annual premium
-        "Client ID Number": row[7], // Assuming column 7 contains the client ID
-        "Street Address": row[8], // Assuming column 8 contains the street address
-        "Suburb": row[9], // Assuming column 9 contains the suburb
-        "City/Town": row[10], // Assuming column 10 contains the city/town
-        "Province": row[11], // Assuming column 11 contains the province
-        "Postal Code": row[12] // Assuming column 12 contains the postal code
-      });
-    }
-  });
+            // Ensure correct URL formatting and avoid malformed URL errors
+            fetch(`${scriptUrl}?${queryParam}`, {
+                method: 'GET',
+                headers: {
+                    "Access-Control-Allow-Origin": "*",  // Allow all origins (or set to your domain)
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",  // Allow GET and POST methods
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization"  // Allow specific headers
+                }
+            })
+                .then(response => {
+                    console.log("Received response:", response); // Debugging: Log the response object
 
-  // Return the filtered data as a JSON response
-  return response.setContent(JSON.stringify(filteredData));
-}
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Data received from API:", data);  // Debugging: Log the received data
 
-function doPost(e) {
-  // This function can be used for POST requests if needed (similar to doGet).
-  // If you're not using POST requests, you can skip or modify this part.
-}
+                    if (data.error) {
+                        throw new Error(`Error in API response: ${data.error}`);
+                    }
+
+                    // Handle no results
+                    if (data.length === 0) {
+                        errorMessage.textContent = "No results found.";
+                    } else {
+                        resultsTable.style.display = "table";
+                        data.forEach(row => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td>${row["Agent Name"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Name"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Email"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Phone Number"] || "N/A"}</td>
+                                <td>${row["Monthly Premium"] || "N/A"}</td>
+                                <td>${row["Annual Premium"] || "N/A"}</td>
+                                <td>${row["Client ID Number"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Street Address"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Suburb"] || "N/A"}</td>
+                                <td>${row["Client Details: City/Town"] || "N/A"}</td>
+                                <td>${row["Client Details: Province"] || "N/A"}</td>
+                                <td>${row["Client Details: Postal Code"] || "N/A"}</td>
+                            `;
+                            resultsBody.appendChild(tr);
+                        });
+                    }
+                })
+                .catch(error => {
+                    errorMessage.textContent = `Error: ${error.message}`;
+                    console.error("Error occurred during the fetch operation:", error);
+                });
+        }
+
+        document.getElementById("search-button").addEventListener("click", () => {
+            const searchQuery = document.getElementById("search-query").value.trim();
+            const errorMessage = document.getElementById("error-message");
+
+            console.log("User input: ", searchQuery); // Debugging: Log the user's input
+
+            if (!searchQuery) {
+                errorMessage.textContent = "Please provide a search term (email, ID number, or phone number).";
+                return;
+            }
+
+            // Properly encode the user input to ensure safe query parameters
+            const queryParams = new URLSearchParams();
+            queryParams.append('query', encodeURIComponent(searchQuery));  // Use encodeURIComponent to safely encode
+
+            // Call the handleSearch function with the properly encoded query
+            handleSearch(queryParams.toString());
+        });
+    </script>
+</body>
+</html>
