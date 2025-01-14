@@ -93,7 +93,14 @@
             console.log("Starting fetch with query: ", queryParam);  // Debugging: Log the query
 
             // Ensure correct URL formatting and avoid malformed URL errors
-            fetch(`${scriptUrl}?${queryParam}`)
+            fetch(`${scriptUrl}?${queryParam}`, {
+                method: 'GET',
+                headers: {
+                    "Access-Control-Allow-Origin": "*",  // Allow all origins (or set to your domain)
+                    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",  // Allow GET and POST methods
+                    "Access-Control-Allow-Headers": "Content-Type, Authorization"  // Allow specific headers
+                }
+            })
                 .then(response => {
                     console.log("Received response:", response); // Debugging: Log the response object
 
