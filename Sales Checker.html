@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Client Data Search</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f0f8ff;
+            color: navy;
+        }
+        .search-container {
+            margin-bottom: 20px;
+        }
+        label {
+            margin-right: 10px;
+        }
+        input[type="text"] {
+            margin-right: 20px;
+            padding: 5px;
+        }
+        button {
+            background-color: navy;
+            color: white;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: darkblue;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        #error-message {
+            color: red;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>SIG Solutions' Membership Query Tool</h1>
+    <div class="search-container">
+        <label for="search-query">Search:</label>
+        <input type="text" id="search-query" placeholder="Enter email, ID number, or phone number">
+        <button id="search-button">Search</button>
+    </div>
+    <div id="error-message"></div>
+    <table id="results-table" style="display: none;">
+        <thead>
+            <tr>
+                <th>Agent Name</th>
+                <th>Client Name</th>
+                <th>Client Email</th>
+                <th>Client Phone Number</th>
+                <th>Monthly Premium</th>
+                <th>Annual Premium</th>
+                <th>Client ID Number</th>
+                <th>Street Address</th>
+                <th>Suburb</th>
+                <th>City/Town</th>
+                <th>Province</th>
+                <th>Postal Code</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const scriptUrl = "https://script.google.com/macros/s/AKfycbyc75gX72ZD8nwoCtzY14wT6mbSDN_wDW-3055pVLGhFTGx0-KPP_boiQWXG_ExZXBIjg/exec"; // Replace with your Web App URL
+
+        // Fetch and display results based on the query parameter
+        function handleSearch(queryParam) {
+            const errorMessage = document.getElementById("error-message");
+            const resultsTable = document.getElementById("results-table");
+            const resultsBody = resultsTable.querySelector("tbody");
+
+            errorMessage.textContent = "";
+            resultsTable.style.display = "none";
+            resultsBody.innerHTML = "";
+
+            console.log("Starting fetch with query: ", queryParam);  // Debugging: Log the query
+
+            // Ensure correct URL formatting and avoid malformed URL errors
+            fetch(`${scriptUrl}?${queryParam}`)
+                .then(response => {
+                    console.log("Received response:", response); // Debugging: Log the response object
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! Status: ${response.status} - ${response.statusText}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log("Data received from API:", data);  // Debugging: Log the received data
+
+                    if (data.error) {
+                        throw new Error(`Error in API response: ${data.error}`);
+                    }
+
+                    // Handle no results
+                    if (data.length === 0) {
+                        errorMessage.textContent = "No results found.";
+                    } else {
+                        resultsTable.style.display = "table";
+                        data.forEach(row => {
+                            const tr = document.createElement("tr");
+                            tr.innerHTML = `
+                                <td>${row["Agent Name"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Name"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Email"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Phone Number"] || "N/A"}</td>
+                                <td>${row["Monthly Premium"] || "N/A"}</td>
+                                <td>${row["Annual Premium"] || "N/A"}</td>
+                                <td>${row["Client ID Number"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Street Address"] || "N/A"}</td>
+                                <td>${row["Client Details: Client Suburb"] || "N/A"}</td>
+                                <td>${row["Client Details: City/Town"] || "N/A"}</td>
+                                <td>${row["Client Details: Province"] || "N/A"}</td>
+                                <td>${row["Client Details: Postal Code"] || "N/A"}</td>
+                            `;
+                            resultsBody.appendChild(tr);
+                        });
+                    }
+                })
+                .catch(error => {
+                    errorMessage.textContent = `Error: ${error.message}`;
+                    console.error("Error occurred during the fetch operation:", error);
+                });
+        }
+
+        document.getElementById("search-button").addEventListener("click", () => {
+            const searchQuery = document.getElementById("search-query").value.trim();
+            const errorMessage = document.getElementById("error-message");
+
+            console.log("User input: ", searchQuery); // Debugging: Log the user's input
+
+            if (!searchQuery) {
+                errorMessage.textContent = "Please provide a search term (email, ID number, or phone number).";
+                return;
+            }
+
+            // Properly encode the user input to ensure safe query parameters
+            const queryParams = new URLSearchParams();
+            queryParams.append('query', encodeURIComponent(searchQuery));  // Use encodeURIComponent to safely encode
+
+            // Call the handleSearch function with the properly encoded query
+            handleSearch(queryParams.toString());
+        });
+    </script>
+</body>
+</html>
